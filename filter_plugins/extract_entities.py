@@ -116,7 +116,7 @@ def extract_device(text):
         return found[0]
     return None
 def extract_users(text):
-    return "users" in text.lower()
+    return "users" if "users" in text.lower() else None
 def extract_entities_item(item):
     if isinstance(item, dict):
         desc = item.get("description", "")
@@ -126,7 +126,7 @@ def extract_entities_item(item):
                 old_vlan = str(int(old_vlan))
             except (ValueError, TypeError):
                 old_vlan = None
-        base = {k: v for k, v in item.items() if k != "vlan"}
+        base = {k: v for k, v in item.items()}
     else:
         desc = str(item)
         old_vlan = None
@@ -138,9 +138,8 @@ def extract_entities_item(item):
         "floor_number": str(floor) if floor is not None else None,
         "device_type": extract_device(cleaned),
         "users": extract_users(cleaned),
+        "old_vlan": old_vlan,
     }
-    if old_vlan is not None:
-        extracted["old_vlan"] = old_vlan
     base.update(extracted)
     return base
 def extract_entities_list(data):
