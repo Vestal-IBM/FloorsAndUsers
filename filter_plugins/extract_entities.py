@@ -117,7 +117,7 @@ def extract_device(text):
     return None
 def extract_users(text):
     return "users" if "users" in text.lower() else None
-def extract_entities_item(item):
+def extract_entities_item(item, combo_counter):
     if isinstance(item, dict):
         desc = item.get("description", "")
         old_vlan = item.get("vlan", None)
@@ -133,17 +133,36 @@ def extract_entities_item(item):
         base = {}
     cleaned = desc.strip().replace("_", " ").lower()
     floor = extract_floor(cleaned)
+    floor_number = str(floor) if floor is not None else None
+    device_type = extract_device(cleaned)
+    users = extract_users(cleaned)
+    # determine combo key and assign alpha
+    alpha = None
+    if device_type not in (None, "ambiguous") and floor_number is not None:
+        combo_key = (device_type, floor_number)
+        if combo_key not in combo_counter:
+            combo_counter[combo_key] = 0
+        combo_counter[combo_key] += 1
+        alpha = chr(ord('a') + combo_counter[combo_key] - 1)
+    elif device_type is None and users is not None and floor_number is not None:
+        combo_key = (users, floor_number)
+        if combo_key not in combo_counter:
+            combo_counter[combo_key] = 0
+        combo_counter[combo_key] += 1
+        alpha = chr(ord('a') + combo_counter[combo_key] - 1)
     extracted = {
         "original_text": cleaned,
-        "floor_number": str(floor) if floor is not None else None,
-        "device_type": extract_device(cleaned),
-        "users": extract_users(cleaned),
+        "floor_number": floor_number,
+        "device_type": device_type,
+        "users": users,
         "old_vlan": old_vlan,
+        "alpha": alpha,
     }
     base.update(extracted)
     return base
 def extract_entities_list(data):
-    return [extract_entities_item(x) for x in data]
+    combo_counter = {}
+    return [extract_entities_item(x, combo_counter) for x in data]
 class FilterModule(object):
     def filters(self):
         return {
