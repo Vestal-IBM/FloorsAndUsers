@@ -137,6 +137,7 @@ def extract_entities_item(item, combo_counter):
     device_type = extract_device(cleaned)
     users = extract_users(cleaned)
     vlan_length = len(old_vlan) if old_vlan is not None else None
+    vlan_last_char = old_vlan[-1] if old_vlan is not None else None
     # determine combo key and assign alpha
     alpha = None
     if device_type not in (None, "ambiguous") and floor_number is not None:
@@ -146,11 +147,14 @@ def extract_entities_item(item, combo_counter):
         combo_counter[combo_key] += 1
         alpha = chr(ord('a') + combo_counter[combo_key] - 1)
     elif device_type is None and users is not None and floor_number is not None:
-        combo_key = (users, floor_number, vlan_length)
-        if combo_key not in combo_counter:
-            combo_counter[combo_key] = 0
-        combo_counter[combo_key] += 1
-        alpha = chr(ord('a') + combo_counter[combo_key] - 1)
+        if vlan_last_char == '0':
+            alpha = 'z'
+        else:
+            combo_key = (users, floor_number, vlan_length)
+            if combo_key not in combo_counter:
+                combo_counter[combo_key] = 0
+            combo_counter[combo_key] += 1
+            alpha = chr(ord('a') + combo_counter[combo_key] - 1)
     extracted = {
         "original_text": cleaned,
         "floor_number": floor_number,
